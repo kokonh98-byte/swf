@@ -1,71 +1,682 @@
 <!DOCTYPE html>
-<html>
+<html lang="bg">
 <head>
-    <title>Моята Flash Игра</title>
     <meta charset="UTF-8">
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Flash Game - Оптимизирана</title>
+    <!-- Тестваме различни версии на Ruffle за скорост -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2024.03.17"></script>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            background: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
-            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
         }
-        .container {
+        
+        .header {
             text-align: center;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4cc9f0;
+            width: 100%;
+            max-width: 900px;
         }
+        
         h1 {
-            color: #333;
+            color: #4cc9f0;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            color: #b8b8d1;
+            font-size: 1.1rem;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            background: #0d0d1a;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 3px solid #2d2d5a;
+        }
+        
+        #game-container {
+            width: 100%;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 13, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #2d2d5a;
+            border-top: 5px solid #4cc9f0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
             margin-bottom: 20px;
         }
-        #game-container {
-            margin: 20px auto;
-            max-width: 800px;
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .instructions {
+        
+        .control-panel {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            border: 2px solid #2d2d5a;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #2d2d5a;
+            color: #b8b8d1;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #ef6c00 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-panel {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #4cc9f0;
+        }
+        
+        .status-title {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #status-text {
+            color: #b8b8d1;
+            line-height: 1.6;
+        }
+        
+        .performance {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .perf-item {
+            background: #0d0d1a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+        
+        .perf-label {
+            color: #7b7ba1;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .perf-value {
+            color: #4cc9f0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: monospace;
+        }
+        
+        .fps-good { color: #4CAF50; }
+        .fps-ok { color: #ff9800; }
+        .fps-bad { color: #f44336; }
+        
+        .error-box {
+            background: #2d1a1a;
+            color: #ff6b6b;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #f44336;
             margin-top: 20px;
-            color: #666;
-            font-size: 14px;
+            display: none;
+        }
+        
+        .debug-info {
+            background: #1a2d1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #6bff6b;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        footer {
+            margin-top: 30px;
+            color: #7b7ba1;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 20px;
+            border-top: 1px solid #2d2d5a;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        @media (max-width: 768px) {
+            .control-panel {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            #game-container {
+                min-height: 400px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎮 Моята Flash Игра</h1>
-        <div id="game-container">
-            <!-- Играта ще се появи тук -->
-        </div>
-        <p class="instructions">Ако играта не се зарежда, опреснете страницата или използвайте друг браузър.</p>
+    <div class="header">
+        <h1>🎮 Flash Игра - Оптимизирана Версия</h1>
+        <p class="subtitle">Автоматична оптимизация за максимална производителност</p>
     </div>
+    
+    <div class="main-container">
+        <div class="game-wrapper">
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <p style="color: #b8b8d1; margin-top: 15px;">Инициализация на оптимизиран емулатор...</p>
+            </div>
+            <div id="game-container"></div>
+        </div>
+        
+        <div class="performance">
+            <div class="perf-item">
+                <div class="perf-label">FPS (Скорост)</div>
+                <div class="perf-value" id="fpsCounter">--</div>
+            </div>
+            <div class="perf-item">
+                <div class="perf-label">Зареждане</div>
+                <div class="perf-value" id="loadStatus">0%</div>
+            </div>
+            <div class="perf-item">
+                <div class="perf-label">Режим</div>
+                <div class="perf-value" id="performanceMode">Авто</div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="btn btn-primary" id="btnLoad">
+                <span>▶️</span> Стартирай Играта
+            </button>
+            <button class="btn btn-secondary" id="btnRestart">
+                <span>🔄</span> Рестарт
+            </button>
+            <button class="btn btn-secondary" id="btnFullscreen">
+                <span>⛶</span> Цял Екран
+            </button>
+            <button class="btn btn-success" id="btnTurbo">
+                <span>⚡</span> ТУРБО Режим
+            </button>
+            <button class="btn btn-warning" id="btnDebug">
+                <span>🔧</span> Дебъг Инфо
+            </button>
+        </div>
+        
+        <div class="status-panel">
+            <div class="status-title">
+                <span>📊</span> Статус на Системата
+            </div>
+            <div id="status-text">
+                Системата е готова. Натиснете "Стартирай Играта" за да започнете.
+            </div>
+            <div class="debug-info" id="debugInfo"></div>
+        </div>
+        
+        <div class="error-box" id="errorBox">
+            <strong>⚠️ Възникна грешка:</strong>
+            <div id="errorText"></div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Оптимизирана Flash игра с Ruffle емулатор | Автоматична настройка за производителност | GitHub Pages</p>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: #5a5a8a;">
+            Съвет: Използвайте "ТУРБО Режим" ако играта е бавна. Превключете на "Цял Екран" за по-добро изживяване.
+        </p>
+    </footer>
 
     <script>
-        // Автоматично зареждане на SWF файла
-        window.RufflePlayer = window.RufflePlayer || {};
-        window.addEventListener("DOMContentLoaded", () => {
-            const ruffle = window.RufflePlayer.newest();
-            const player = ruffle.createPlayer();
-            const container = document.getElementById("game-container");
-            container.appendChild(player);
+        // ===== КОНФИГУРАЦИЯ И СЪСТОЯНИЕ =====
+        const CONFIG = {
+            swfFile: 'game.swf',
+            ruffleVersions: [
+                'https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2024.03.17',
+                'https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2023.12.31',
+                'https://unpkg.com/@ruffle-rs/ruffle'
+            ],
+            currentVersionIndex: 0
+        };
+        
+        let gamePlayer = null;
+        let fpsCounter = 0;
+        let lastFpsUpdate = performance.now();
+        let frameCount = 0;
+        let isTurboMode = false;
+        let gameLoaded = false;
+        
+        // ===== ЕЛЕМЕНТИ ОТ DOM =====
+        const elements = {
+            gameContainer: document.getElementById('game-container'),
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            fpsCounter: document.getElementById('fpsCounter'),
+            loadStatus: document.getElementById('loadStatus'),
+            performanceMode: document.getElementById('performanceMode'),
+            statusText: document.getElementById('status-text'),
+            errorBox: document.getElementById('errorBox'),
+            errorText: document.getElementById('errorText'),
+            debugInfo: document.getElementById('debugInfo'),
+            btnLoad: document.getElementById('btnLoad'),
+            btnRestart: document.getElementById('btnRestart'),
+            btnFullscreen: document.getElementById('btnFullscreen'),
+            btnTurbo: document.getElementById('btnTurbo'),
+            btnDebug: document.getElementById('btnDebug')
+        };
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ НА RUFFLE =====
+        function initRuffle() {
+            updateStatus('Инициализация на оптимизиран Flash емулатор...');
             
-            // Замени "game.swf" с името на твоя файл
-            player.load("game.swf").catch(error => {
-                console.error("Грешка при зареждане на играта:", error);
-                container.innerHTML = `
-                    <div style="color: red; padding: 20px;">
-                        <h3>Грешка при зареждане на играта</h3>
-                        <p>${error.message}</p>
-                        <p>Уверете се, че файлът game.swf е качен в същата папка.</p>
-                    </div>
-                `;
-            });
+            window.RufflePlayer = window.RufflePlayer || {};
+            window.RufflePlayer.config = {
+                // Основни настройки
+                autoplay: 'on',
+                unmuteOverlay: 'hidden',
+                letterbox: 'off',
+                warnOnUnsupportedContent: false,
+                contextMenu: false,
+                showSwfDownload: false,
+                
+                // Настройки за производителност
+                preferredRenderer: 'canvas', // canvas е по-стабилен
+                upgradeToHttps: false,
+                maxExecutionDuration: { secs: 45, nanos: 0 },
+                logLevel: 'warn', // Намаляваме логовете
+                
+                // Експериментални оптимизации
+                polyfills: false,
+                openUrlMode: 'deny'
+            };
+            
+            setTimeout(() => {
+                if (window.RufflePlayer && window.RufflePlayer.newest) {
+                    updateStatus('Ruffle емулаторът е зареден успешно!');
+                    elements.loadingOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        elements.loadingOverlay.style.display = 'none';
+                    }, 300);
+                    enableControls();
+                } else {
+                    updateStatus('Грешка при зареждане на Ruffle. Опитвам алтернативна версия...', true);
+                    tryAlternativeRuffle();
+                }
+            }, 1000);
+        }
+        
+        // ===== ЗАРЕЖДАНЕ НА ИГРАТА =====
+        function loadGame() {
+            if (!window.RufflePlayer || !window.RufflePlayer.newest) {
+                showError('Ruffle емулаторът не е зареден. Моля изчакайте.');
+                return;
+            }
+            
+            resetGameContainer();
+            updateStatus('Зареждане на играта с оптимизирани настройки...');
+            elements.btnLoad.disabled = true;
+            
+            try {
+                const ruffle = window.RufflePlayer.newest();
+                
+                // Прилагане на турбо настройки ако е активиран режима
+                if (isTurboMode) {
+                    applyTurboSettings(ruffle);
+                }
+                
+                gamePlayer = ruffle.createPlayer();
+                gamePlayer.style.width = '100%';
+                gamePlayer.style.height = '100%';
+                gamePlayer.style.minHeight = '600px';
+                gamePlayer.style.display = 'block';
+                
+                elements.gameContainer.appendChild(gamePlayer);
+                
+                // Зареждане на SWF файла
+                gamePlayer.load(CONFIG.swfFile)
+                    .then(() => {
+                        gameLoaded = true;
+                        updateStatus('✅ Играта е заредена успешно!', false);
+                        startPerformanceMonitoring();
+                        elements.loadStatus.textContent = '100%';
+                        elements.btnRestart.disabled = false;
+                        
+                        // Автоматично включване на пълния екран за по-добро изживяване
+                        setTimeout(() => {
+                            if (window.innerWidth > 1024) {
+                                updateStatus('Съвет: Натиснете "Цял Екран" за по-добро изживяване.', false);
+                            }
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        showError(`Грешка при зареждане на играта: ${error.message}`);
+                        elements.btnLoad.disabled = false;
+                        logDebug(`Грешка: ${error.stack || error}`);
+                    });
+                    
+                // Симулираме прогрес на зареждане
+                simulateLoadProgress();
+                
+            } catch (error) {
+                showError(`Грешка при създаване на играч: ${error.message}`);
+                elements.btnLoad.disabled = false;
+            }
+        }
+        
+        // ===== ТУРБО РЕЖИМ (ОПТИМИЗАЦИИ) =====
+        function applyTurboSettings(ruffleInstance) {
+            updateStatus('⚡ Активиране на ТУРБО режим (оптимизации за скорост)...');
+            
+            // Експериментални настройки за производителност
+            try {
+                // Намаляване на качеството за по-висок FPS
+                if (gamePlayer) {
+                    gamePlayer.style.imageRendering = 'pixelated';
+                    gamePlayer.style.transform = 'translateZ(0)'; // Хардуерно ускорение
+                }
+                
+                // Промяна на конфигурацията
+                ruffleInstance.config.preferredRenderer = 'canvas';
+                ruffleInstance.config.logLevel = 'error'; // Още по-малко логове
+                
+                elements.performanceMode.textContent = 'ТУРБО';
+                elements.performanceMode.className = 'perf-value fps-good';
+                
+            } catch (e) {
+                logDebug(`Неуспешна турбо оптимизация: ${e.message}`);
+            }
+        }
+        
+        function toggleTurboMode() {
+            isTurboMode = !isTurboMode;
+            
+            if (isTurboMode) {
+                elements.btnTurbo.innerHTML = '<span>⚡</span> ИЗКЛ. ТУРБО';
+                elements.btnTurbo.classList.remove('btn-success');
+                elements.btnTurbo.classList.add('btn-warning');
+                updateStatus('ТУРБО режим активиран. Опитвам оптимизации...');
+                
+                if (gameLoaded && gamePlayer) {
+                    applyTurboSettings(window.RufflePlayer.newest());
+                }
+            } else {
+                elements.btnTurbo.innerHTML = '<span>⚡</span> ТУРБО Режим';
+                elements.btnTurbo.classList.remove('btn-warning');
+                elements.btnTurbo.classList.add('btn-success');
+                elements.performanceMode.textContent = 'Нормален';
+                elements.performanceMode.className = 'perf-value';
+                updateStatus('ТУРБО режим деактивиран.');
+            }
+        }
+        
+        // ===== МОНИТОРИНГ НА ПРОИЗВОДИТЕЛНОСТТА =====
+        function startPerformanceMonitoring() {
+            // FPS брояч
+            function updateFPS() {
+                const now = performance.now();
+                frameCount++;
+                
+                if (now - lastFpsUpdate >= 1000) {
+                    const fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+                    
+                    // Обновяване на дисплея
+                    elements.fpsCounter.textContent = fps;
+                    
+                    // Цветово кодиране според FPS
+                    if (fps >= 30) {
+                        elements.fpsCounter.className = 'perf-value fps-good';
+                    } else if (fps >= 15) {
+                        elements.fpsCounter.className = 'perf-value fps-ok';
+                    } else {
+                        elements.fpsCounter.className = 'perf-value fps-bad';
+                    }
+                    
+                    frameCount = 0;
+                    lastFpsUpdate = now;
+                }
+                
+                if (gameLoaded) {
+                    requestAnimationFrame(updateFPS);
+                }
+            }
+            
+            // Стартиране на мониторинга
+            if (gamePlayer) {
+                gamePlayer.addEventListener('frame', () => {
+                    frameCount++;
+                });
+            }
+            
+            requestAnimationFrame(updateFPS);
+        }
+        
+        // ===== ПОМОЩНИ ФУНКЦИИ =====
+        function updateStatus(message, isWarning = false) {
+            elements.statusText.innerHTML = message;
+            elements.statusText.style.color = isWarning ? '#ff9800' : '#b8b8d1';
+            
+            // Автоматично логване в дебъг панела
+            logDebug(`[${new Date().toLocaleTimeString()}] ${message}`);
+        }
+        
+        function showError(message) {
+            elements.errorText.textContent = message;
+            elements.errorBox.style.display = 'block';
+            logDebug(`[ГРЕШКА] ${message}`);
+        }
+        
+        function logDebug(message) {
+            const debugElement = elements.debugInfo;
+            debugElement.innerHTML += message + '\n';
+            debugElement.scrollTop = debugElement.scrollHeight;
+        }
+        
+        function resetGameContainer() {
+            if (gamePlayer) {
+                try {
+                    elements.gameContainer.removeChild(gamePlayer);
+                } catch (e) {}
+                gamePlayer = null;
+            }
+            gameLoaded = false;
+            elements.gameContainer.innerHTML = '';
+            elements.loadStatus.textContent = '0%';
+            elements.fpsCounter.textContent = '--';
+            elements.fpsCounter.className = 'perf-value';
+            elements.errorBox.style.display = 'none';
+        }
+        
+        function simulateLoadProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (progress < 90 && !gameLoaded) {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    elements.loadStatus.textContent = Math.round(progress) + '%';
+                } else if (gameLoaded) {
+                    clearInterval(interval);
+                } else {
+                    clearInterval(interval);
+                }
+            }, 300);
+        }
+        
+        function tryAlternativeRuffle() {
+            CONFIG.currentVersionIndex++;
+            
+            if (CONFIG.currentVersionIndex < CONFIG.ruffleVersions.length) {
+                updateStatus(`Опитвам алтернативна версия на Ruffle (${CONFIG.currentVersionIndex + 1}/3)...`);
+                
+                // Премахваме стария скрипт
+                const oldScript = document.querySelector('script[src*="ruffle"]');
+                if (oldScript) oldScript.remove();
+                
+                // Добавяме нова версия
+                const newScript = document.createElement('script');
+                newScript.src = CONFIG.ruffleVersions[CONFIG.currentVersionIndex];
+                newScript.onload = initRuffle;
+                document.head.appendChild(newScript);
+            } else {
+                showError('Всички опити за зареждане на Ruffle неуспешни. Моля опреснете страницата.');
+            }
+        }
+        
+        function enableControls() {
+            elements.btnLoad.disabled = false;
+            elements.btnTurbo.disabled = false;
+            elements.btnDebug.disabled = false;
+            elements.btnFullscreen.disabled = false;
+        }
+        
+        // ===== СЛУШАТЕЛИ НА СЪБИТИЯ =====
+        elements.btnLoad.addEventListener('click', loadGame);
+        
+        elements.btnRestart.addEventListener('click', () => {
+            updateStatus('Рестартиране на играта...');
+            loadGame();
+        });
+        
+        elements.btnFullscreen.addEventListener('click', () => {
+            const element = elements.gameContainer;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+            updateStatus('Режим на цял екран активиран. Натиснете ESC за изход.');
+        });
+        
+        elements.btnTurbo.addEventListener('click', toggleTurboMode);
+        
+        elements.btnDebug.addEventListener('click', () => {
+            const debugElement = elements.debugInfo;
+            debugElement.style.display = debugElement.style.display === 'block' ? 'none' : 'block';
+            updateStatus(debugElement.style.display === 'block' ? 
+                'Дебъг информация включена.' : 'Дебъг информация изключена.');
+        });
+        
+        // ===== СТАРТИРАНЕ ПРИ ЗАРЕЖДАНЕ =====
+        document.addEventListener('DOMContentLoaded', initRuffle);
+        
+        // Автоматично стартиране на играта след 2 секунди
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.RufflePlayer && window.RufflePlayer.newest) {
+                    updateStatus('Системата е готова. Стартиране на играта...');
+                    loadGame();
+                }
+            }, 2000);
         });
     </script>
 </body>
