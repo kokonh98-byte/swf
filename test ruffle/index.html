@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Local Test</title>
+</head>
+<body>
+    <h1>Direct Local Test</h1>
+    
+    <!-- Метод 1: Директен object tag -->
+    <object id="flash1" width="800" height="600">
+        <param name="movie" value="game.swf">
+        <param name="quality" value="high">
+        <embed src="game.swf" width="800" height="600" quality="high">
+    </object>
+    
+    <hr>
+    
+    <!-- Метод 2: Iframe към Ruffle демо -->
+    <h2>Ruffle Demo Iframe</h2>
+    <iframe src="https://ruffle.rs/demo/" width="800" height="600"></iframe>
+    <p>След като се зареди iframe-а, плъзнете game.swf файла върху него</p>
+    
+    <hr>
+    
+    <!-- Метод 3: Директен линк -->
+    <h2>Direct Link</h2>
+    <a href="game.swf" download>Download game.swf</a>
+    <p>Размер на файла: <span id="filesize">?</span> KB</p>
+</body>
+<script>
+    // Проверка на размера на файла
+    fetch('game.swf')
+        .then(response => {
+            const size = response.headers.get('content-length');
+            document.getElementById('filesize').textContent = 
+                Math.round(size / 1024);
+        })
+        .catch(e => {
+            document.getElementById('filesize').textContent = 'Грешка: ' + e;
+        });
+</script>
+</html>
