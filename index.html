@@ -1,112 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SWF Тест - Базов</title>
-    <!-- Използваме официалния Ruffle CDN -->
-    <script src="https://ruffle.rs/ruffle.js"></script>
+    <title>Моята Flash Игра</title>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
     <style>
-        body { font-family: Arial; padding: 20px; background: #f0f0f0; }
-        #test-area { margin: 20px 0; padding: 20px; background: white; border-radius: 10px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
-        #result { margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 5px; }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #game-container {
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        .instructions {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <h1>🔍 Диагностика на Ruffle</h1>
-    
-    <div id="test-area">
-        <h3>Тест 1: Проверка на файловете</h3>
-        <button onclick="testFile()">Провери game.swf файл</button>
-        <button onclick="testRuffle()">Провери Ruffle емулатор</button>
-        
-        <h3>Тест 2: Зареди играта</h3>
-        <div id="game-container" style="width:800px;height:600px;background:#000;margin:10px 0;"></div>
-        <button onclick="loadGame()">▶️ Стартирай играта</button>
+    <div class="container">
+        <h1>🎮 Моята Flash Игра</h1>
+        <div id="game-container">
+            <!-- Играта ще се появи тук -->
+        </div>
+        <p class="instructions">Ако играта не се зарежда, опреснете страницата или използвайте друг браузър.</p>
     </div>
-    
-    <div id="result">Тук ще се показват резултатите...</div>
 
     <script>
-        const resultDiv = document.getElementById('result');
-        const gameContainer = document.getElementById('game-container');
-        
-        // Тест 1: Проверка дали SWF файла е достъпен
-        function testFile() {
-            resultDiv.innerHTML = "Проверявам game.swf...";
+        // Автоматично зареждане на SWF файла
+        window.RufflePlayer = window.RufflePlayer || {};
+        window.addEventListener("DOMContentLoaded", () => {
+            const ruffle = window.RufflePlayer.newest();
+            const player = ruffle.createPlayer();
+            const container = document.getElementById("game-container");
+            container.appendChild(player);
             
-            fetch('game.swf')
-                .then(response => {
-                    if (response.ok) {
-                        const size = response.headers.get('content-length');
-                        resultDiv.innerHTML = `✅ Файлът съществува!<br>Размер: ${Math.round(size/1024)} KB`;
-                    } else {
-                        resultDiv.innerHTML = `❌ Файлът НЕ съществува (Грешка ${response.status})<br>
-                        Отидете на: <a href="game.swf" target="_blank">game.swf</a> за проверка`;
-                    }
-                })
-                .catch(error => {
-                    resultDiv.innerHTML = `❌ Грешка при достъп до файла: ${error.message}`;
-                });
-        }
-        
-        // Тест 2: Проверка дали Ruffle се е заредил
-        function testRuffle() {
-            resultDiv.innerHTML = "Проверявам Ruffle...";
-            
-            if (window.RufflePlayer && window.RufflePlayer.newest) {
-                resultDiv.innerHTML = "✅ Ruffle емулаторът е зареден успешно!";
-                console.log("Ruffle версия:", window.RufflePlayer.newest().version);
-            } else {
-                resultDiv.innerHTML = "❌ Ruffle НЕ е зареден. Пробвайте:<br>" +
-                    "1. Презаредете страницата (Ctrl+F5)<br>" +
-                    "2. Проверете интернет връзката<br>" +
-                    "3. Опитайте друг браузър";
-            }
-        }
-        
-        // Тест 3: Опит за зареждане на играта
-        function loadGame() {
-            resultDiv.innerHTML = "Опитвам да заредя играта...";
-            gameContainer.innerHTML = "";
-            
-            // Проверка дали Ruffle съществува
-            if (!window.RufflePlayer) {
-                resultDiv.innerHTML = "❌ Ruffle не е зареден. Първо изпълнете 'Провери Ruffle емулатор'";
-                return;
-            }
-            
-            try {
-                const ruffle = window.RufflePlayer.newest();
-                const player = ruffle.createPlayer();
-                
-                player.style.width = "100%";
-                player.style.height = "100%";
-                player.style.display = "block";
-                
-                gameContainer.appendChild(player);
-                
-                // Опитваме да заредим играта
-                player.load("game.swf")
-                    .then(() => {
-                        resultDiv.innerHTML = "✅ Играта се зарежда!<br>" +
-                            "Ако е бавна, това е проблем на Ruffle емулатора.";
-                    })
-                    .catch(error => {
-                        resultDiv.innerHTML = `❌ Грешка при зареждане на играта:<br><strong>${error.message}</strong>`;
-                        console.error("Детайли за грешката:", error);
-                    });
-                    
-            } catch (error) {
-                resultDiv.innerHTML = `❌ Грешка при създаване на плеър:<br>${error.message}`;
-            }
-        }
-        
-        // Автоматично тестване при зареждане на страницата
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                testFile();
-                setTimeout(testRuffle, 1000);
-            }, 500);
+            // Замени "game.swf" с името на твоя файл
+            player.load("game.swf").catch(error => {
+                console.error("Грешка при зареждане на играта:", error);
+                container.innerHTML = `
+                    <div style="color: red; padding: 20px;">
+                        <h3>Грешка при зареждане на играта</h3>
+                        <p>${error.message}</p>
+                        <p>Уверете се, че файлът game.swf е качен в същата папка.</p>
+                    </div>
+                `;
+            });
         });
     </script>
 </body>
