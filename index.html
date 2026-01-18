@@ -1,232 +1,112 @@
 <!DOCTYPE html>
-<html lang="bg">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flash Game - Оптимизирано</title>
-    <!-- ВМЕСТО стандартния Ruffle, използваме специфична NIGHTLY версия -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle@nightly"></script>
+    <title>SWF Тест - Базов</title>
+    <!-- Използваме официалния Ruffle CDN -->
+    <script src="https://ruffle.rs/ruffle.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: #eee;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            padding: 10px;
-        }
-        #container {
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-        }
-        h1 { 
-            color: #4CAF50; 
-            margin-bottom: 15px; 
-            font-size: 2em; 
-        }
-        #game-container {
-            width: 100%;
-            background: #000;
-            border: 3px solid #333;
-            border-radius: 5px;
-            overflow: hidden;
-            /* ФИКСИРАН РАЗМЕР - много важен за производителност! */
-            height: 600px;
-        }
-        #controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        button {
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-        button:hover { background: #45a049; }
-        #status {
-            margin-top: 15px;
-            padding: 10px;
-            background: #222;
-            border-radius: 5px;
-            min-height: 20px;
-        }
-        .hidden { display: none; }
-        #fps-counter {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: #0f0;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 14px;
-        }
+        body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+        #test-area { margin: 20px 0; padding: 20px; background: white; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div id="fps-counter">FPS: --</div>
-    <div id="container">
-        <h1>🎮 Flash Game (Оптимизиран)</h1>
-        <div id="game-container"></div>
+    <h1>🔍 Диагностика на Ruffle</h1>
+    
+    <div id="test-area">
+        <h3>Тест 1: Проверка на файловете</h3>
+        <button onclick="testFile()">Провери game.swf файл</button>
+        <button onclick="testRuffle()">Провери Ruffle емулатор</button>
         
-        <div id="controls">
-            <button id="reloadBtn">🔄 Презареди</button>
-            <button id="perfBtn">⚡ Режим за Скорост</button>
-            <button id="fsBtn">⛶ Цял Екран</button>
-        </div>
-        
-        <div id="status">Стартиране на Ruffle емулатора...</div>
+        <h3>Тест 2: Зареди играта</h3>
+        <div id="game-container" style="width:800px;height:600px;background:#000;margin:10px 0;"></div>
+        <button onclick="loadGame()">▶️ Стартирай играта</button>
     </div>
+    
+    <div id="result">Тук ще се показват резултатите...</div>
 
     <script>
-        // === КОНФИГУРАЦИЯ ЗА МАКСИМАЛНА ПРОИЗВОДИТЕЛНОСТ ===
-        const RuffleConfig = {
-            autoplay: 'on',
-            unmuteOverlay: 'hidden',
-            // 'canvas' често е по-бърз и стабилен от 'webgl' за Flash
-            preferredRenderer: 'canvas',
-            // Спира логовете в конзолата, които забавят
-            logLevel: 'error',
-            // Изключва ненужни за играта функции
-            contextMenu: false,
-            showSwfDownload: false,
-            // Важно: задава базов URL за зареждане на ресурси
-            base: window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1),
-            // Максимално време за изпълнение (в секунди)
-            maxExecutionDuration: { secs: 30, nanos: 0 },
-            // Флаг за производителност
-            upgradeToHttps: false,
-            // Изключва Letterbox (черни ленти) за по-добра скорост
-            letterbox: 'off',
-            // Опитай 'direct' за някои игри, ако 'window' е бавно
-            wmode: 'direct'
-        };
-
-        let player = null;
-        let frameCount = 0;
-        let lastTime = performance.now();
-        const fpsElement = document.getElementById('fps-counter');
+        const resultDiv = document.getElementById('result');
         const gameContainer = document.getElementById('game-container');
-        const statusElement = document.getElementById('status');
-
-        // Функция за презареждане на играта
-        window.loadGame = function() {
-            statusElement.textContent = 'Зареждане на играта...';
-            if (player) {
-                gameContainer.removeChild(player);
-                player = null;
-            }
+        
+        // Тест 1: Проверка дали SWF файла е достъпен
+        function testFile() {
+            resultDiv.innerHTML = "Проверявам game.swf...";
             
-            // Дадем време на DOM да се обнови
-            setTimeout(() => {
-                try {
-                    const ruffle = window.RufflePlayer.newest();
-                    ruffle.config = RuffleConfig;
-                    
-                    player = ruffle.createPlayer();
-                    player.style.width = '100%';
-                    player.style.height = '100%';
-                    player.style.display = 'block';
-                    
-                    gameContainer.appendChild(player);
-                    
-                    player.load('game.swf')
-                        .then(() => {
-                            statusElement.textContent = '✅ Играта е заредена. Ако е бавна, опитай "Режим за Скорост".';
-                            startFPSCounter();
-                        })
-                        .catch(error => {
-                            statusElement.innerHTML = `❌ Грешка при зареждане: <strong>${error.message}</strong><br>
-                            Пробвай с <button onclick="loadAlternative()">Алтернативна версия на Ruffle</button>`;
-                            console.error('Грешка при зареждане:', error);
-                        });
-                } catch (err) {
-                    statusElement.textContent = '❌ Грешка при инициализация на Ruffle.';
-                    console.error(err);
-                }
-            }, 100);
-        };
-
-        // Алтернативна (по-стара) версия на Ruffle
-        window.loadAlternative = function() {
-            statusElement.textContent = 'Опитвам алтернативна версия...';
-            const oldScript = document.querySelector('script[src*="ruffle"]');
-            if (oldScript) oldScript.remove();
-            
-            const newScript = document.createElement('script');
-            // Опитваме с конкретна по-стара версия
-            newScript.src = 'https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2023.10.30';
-            newScript.onload = loadGame;
-            document.head.appendChild(newScript);
-        };
-
-        // Брояч на FPS (кадри в секунда)
-        function startFPSCounter() {
-            function updateFPS() {
-                const now = performance.now();
-                frameCount++;
-                
-                if (now - lastTime >= 1000) {
-                    const fps = Math.round((frameCount * 1000) / (now - lastTime));
-                    fpsElement.textContent = `FPS: ${fps}`;
-                    frameCount = 0;
-                    lastTime = now;
-                    
-                    // Ако FPS е твърде нисък, предлагаме помощ
-                    if (fps < 15 && fps > 5) {
-                        fpsElement.style.color = '#ff9900';
-                    } else if (fps <= 5) {
-                        fpsElement.style.color = '#ff3300';
-                        fpsElement.innerHTML += '<br>⚠️ Много бавно!';
+            fetch('game.swf')
+                .then(response => {
+                    if (response.ok) {
+                        const size = response.headers.get('content-length');
+                        resultDiv.innerHTML = `✅ Файлът съществува!<br>Размер: ${Math.round(size/1024)} KB`;
                     } else {
-                        fpsElement.style.color = '#0f0';
+                        resultDiv.innerHTML = `❌ Файлът НЕ съществува (Грешка ${response.status})<br>
+                        Отидете на: <a href="game.swf" target="_blank">game.swf</a> за проверка`;
                     }
-                }
-                requestAnimationFrame(updateFPS);
-            }
-            updateFPS();
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `❌ Грешка при достъп до файла: ${error.message}`;
+                });
         }
-
-        // Режим за скорост (намалява качеството за повече FPS)
-        document.getElementById('perfBtn').addEventListener('click', function() {
-            if (player) {
-                // Това са експериментални настройки, които понякога помагат
-                statusElement.textContent = '⚡ Режим за скорост активиран (може да намали качеството).';
-                // Може да се пробва с промяна на мащаба
-                try { player.style.imageRendering = 'pixelated'; } catch(e) {}
+        
+        // Тест 2: Проверка дали Ruffle се е заредил
+        function testRuffle() {
+            resultDiv.innerHTML = "Проверявам Ruffle...";
+            
+            if (window.RufflePlayer && window.RufflePlayer.newest) {
+                resultDiv.innerHTML = "✅ Ruffle емулаторът е зареден успешно!";
+                console.log("Ruffle версия:", window.RufflePlayer.newest().version);
+            } else {
+                resultDiv.innerHTML = "❌ Ruffle НЕ е зареден. Пробвайте:<br>" +
+                    "1. Презаредете страницата (Ctrl+F5)<br>" +
+                    "2. Проверете интернет връзката<br>" +
+                    "3. Опитайте друг браузър";
             }
-        });
-
-        // Цял екран
-        document.getElementById('fsBtn').addEventListener('click', function() {
-            const elem = player || gameContainer;
-            if (elem.requestFullscreen) elem.requestFullscreen();
-            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-        });
-
-        // Презареждане
-        document.getElementById('reloadBtn').addEventListener('click', loadGame);
-
-        // Стартиране при зареждане на страницата
-        window.addEventListener('DOMContentLoaded', function() {
-            // Да изчакаме малко преди старт
-            setTimeout(loadGame, 500);
+        }
+        
+        // Тест 3: Опит за зареждане на играта
+        function loadGame() {
+            resultDiv.innerHTML = "Опитвам да заредя играта...";
+            gameContainer.innerHTML = "";
+            
+            // Проверка дали Ruffle съществува
+            if (!window.RufflePlayer) {
+                resultDiv.innerHTML = "❌ Ruffle не е зареден. Първо изпълнете 'Провери Ruffle емулатор'";
+                return;
+            }
+            
+            try {
+                const ruffle = window.RufflePlayer.newest();
+                const player = ruffle.createPlayer();
+                
+                player.style.width = "100%";
+                player.style.height = "100%";
+                player.style.display = "block";
+                
+                gameContainer.appendChild(player);
+                
+                // Опитваме да заредим играта
+                player.load("game.swf")
+                    .then(() => {
+                        resultDiv.innerHTML = "✅ Играта се зарежда!<br>" +
+                            "Ако е бавна, това е проблем на Ruffle емулатора.";
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = `❌ Грешка при зареждане на играта:<br><strong>${error.message}</strong>`;
+                        console.error("Детайли за грешката:", error);
+                    });
+                    
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Грешка при създаване на плеър:<br>${error.message}`;
+            }
+        }
+        
+        // Автоматично тестване при зареждане на страницата
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                testFile();
+                setTimeout(testRuffle, 1000);
+            }, 500);
         });
     </script>
 </body>
