@@ -1,17 +1,144 @@
 <!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>Flash Player</title>
-<style>body{margin:0;padding:0;background:#000;}</style>
-</head><body>
-<div id="game"></div>
-
-<script src="https://unpkg.com/@ruffle-rs/ruffle@latest/dist/ruffle.js"></script>
-<script>
-window.addEventListener('load', () => {
-    const player = window.RufflePlayer.newest().createPlayer();
-    document.getElementById('game').appendChild(player);
-    player.load('game.swf').catch(e => console.error(e));
-});
-</script>
-</body></html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Game - Local Ruffle</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Зареждане...</div>
+    <div id="game-container"></div>
+    
+    <!-- Използване на ЛОКАЛЕН ruffle.js файл -->
+    <script src="ruffle.js"></script>
+    
+    <script>
+        // Функция за обновяване на статуса
+        function updateStatus(message) {
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = message;
+            }
+            console.log('Статус:', message);
+        }
+        
+        // Функция за зареждане на играта
+        async function loadGame() {
+            try {
+                updateStatus('Инициализация на Ruffle...');
+                
+                // Изчакай Ruffle да се зареди
+                if (!window.RufflePlayer) {
+                    throw new Error('Ruffle не е зареден. Проверете ruffle.js файла.');
+                }
+                
+                const ruffle = window.RufflePlayer.newest();
+                if (!ruffle) {
+                    throw new Error('Не може да се намери RufflePlayer');
+                }
+                
+                updateStatus('Ruffle зареден успешно');
+                
+                // Опционална конфигурация
+                ruffle.config = {
+                    autoplay: 'on',
+                    unmuteOverlay: 'hidden',
+                    backgroundColor: '#000000',
+                    letterbox: 'fullscreen',
+                    splashScreen: false,
+                    warnOnUnsupportedContent: false,
+                    contextMenu: 'off'
+                };
+                
+                // Създаване на плеъра
+                const player = ruffle.createPlayer();
+                const container = document.getElementById('game-container');
+                container.appendChild(player);
+                
+                // Зареждане на SWF файла
+                updateStatus('Зареждане на game.swf...');
+                
+                const swfFile = 'game.swf'; // Име на вашия SWF файл
+                
+                // Проверка дали файлът съществува (опционално)
+                try {
+                    const response = await fetch(swfFile, { method: 'HEAD' });
+                    if (!response.ok) {
+                        updateStatus(`Файлът "${swfFile}" не е намерен`);
+                        console.warn(`SWF файл "${swfFile}" не е намерен. Опитайте да проверите името.`);
+                    }
+                } catch (e) {
+                    // Продължаваме независимо от проверката
+                    console.log('Проверката на файла пропусната:', e.message);
+                }
+                
+                // Зареждане на играта
+                await player.load({
+                    url: swfFile,
+                    allowScriptAccess: true
+                });
+                
+                updateStatus('Играта е заредена!');
+                
+                // Скриване на статуса след 3 секунди
+                setTimeout(() => {
+                    const statusDiv = document.getElementById('status');
+                    if (statusDiv) {
+                        statusDiv.style.opacity = '0';
+                        statusDiv.style.transition = 'opacity 1s';
+                        setTimeout(() => statusDiv.style.display = 'none', 1000);
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                updateStatus(`Грешка: ${error.message}`);
+                console.error('Детайли за грешката:', error);
+                
+                // Показване на допълнителна информация
+                setTimeout(() => {
+                    alert(`Грешка при зареждане:\n${error.message}\n\nПроверете:\n1. SWF файлът да е в същата папка\n2. Името на файла да е game.swf\n3. Конзолата за детайли (F12)`);
+                }, 500);
+            }
+        }
+        
+        // Стартиране при зареждане на страницата
+        window.addEventListener('DOMContentLoaded', () => {
+            // Малко забавяне за сигурност
+            setTimeout(loadGame, 100);
+        });
+    </script>
+</body>
+</html>
