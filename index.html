@@ -1,329 +1,70 @@
 <!DOCTYPE html>
-<html lang="bg">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flash Game - PlayerIO Fix</title>
-    <script src="https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2023.12.31"></script>
+    <title>Ruffle Flash Player</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
-            background: #1a1a1a;
+            padding: 0;
+            background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: Arial, sans-serif;
-            color: white;
         }
-        .container {
-            text-align: center;
-            background: #2d2d2d;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 2px solid #444;
-            max-width: 900px;
+        
+        #ruffle-container {
             width: 100%;
-        }
-        h1 {
-            color: #4CAF50;
-            margin-bottom: 20px;
-        }
-        #game-container {
-            margin: 20px auto;
-            width: 800px;
-            height: 600px;
-            background: black;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 3px solid #555;
-        }
-        .warning {
-            background: #332211;
-            color: #ff9900;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 5px solid #ff9900;
-        }
-        .controls {
-            margin: 20px 0;
+            height: 100vh;
             display: flex;
-            gap: 10px;
             justify-content: center;
-            flex-wrap: wrap;
+            align-items: center;
         }
-        button {
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
+        
+        ruffle-player {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
         }
-        button:hover { background: #45a049; }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-        #status {
-            margin-top: 15px;
-            padding: 10px;
-            background: #333;
-            border-radius: 5px;
-            min-height: 20px;
-        }
-        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎮 Flash Game - PlayerIO Fix</h1>
-        
-        <div class="warning">
-            ⚠️ <strong>PlayerIO API е спрян</strong><br>
-            Играта се опитва да се свърже със спрян онлайн сервиз. Прилагам фикс...
-        </div>
-        
-        <div id="game-container">
-            <div id="loading" style="color:white; padding:50px;">
-                <h3>Зареждане със защита срещу PlayerIO...</h3>
-                <p>Играта ще стартира без онлайн функции</p>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <button id="loadBtn">▶️ Зареди Играта</button>
-            <button id="reloadBtn" disabled>🔄 Рестарт</button>
-            <button id="skipBtn">⏭️ Пропусни Онлайн Част</button>
-        </div>
-        
-        <div id="status">Готов за зареждане...</div>
-    </div>
-
+    <div id="ruffle-container"></div>
+    
+    <!-- Ruffle последна версия -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle@latest/dist/ruffle.js"></script>
+    
     <script>
-        // ============================================
-        // ВАЖНО: БЛОКИРАНЕ НА PLAYERIO API ЗАЯВКИ
-        // ============================================
-        console.log('🔧 Активиране на PlayerIO блокиране...');
-        
-        // 1. Блокиране на fetch() заявки
-        if (window.fetch) {
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options) {
-                if (url && (url.includes('playerio.com') || url.includes('flashbridge'))) {
-                    console.warn('🚫 Блокирана PlayerIO fetch заявка:', url);
-                    return Promise.reject(new Error('PlayerIO API недостъпен (спрян)'));
-                }
-                return originalFetch.call(this, url, options);
-            };
-        }
-        
-        // 2. Блокиране на XMLHttpRequest заявки
-        const originalXHROpen = XMLHttpRequest.prototype.open;
-        const originalXHRSend = XMLHttpRequest.prototype.send;
-        
-        XMLHttpRequest.prototype.open = function(method, url) {
-            if (url && (url.includes('playerio.com') || url.includes('flashbridge'))) {
-                console.warn('🚫 Блокирана PlayerIO XHR заявка:', url);
-                this._playerioBlocked = true;
-                // Връщаме фиктивен обект, за да избегнем грешки
-                return;
-            }
-            return originalXHROpen.apply(this, arguments);
-        };
-        
-        XMLHttpRequest.prototype.send = function(body) {
-            if (this._playerioBlocked) {
-                console.log('Имитация на успешен отговор за PlayerIO...');
-                // Имитираме успешен отговор, за да избегнем грешки в играта
-                setTimeout(() => {
-                    if (this.onreadystatechange) {
-                        this.readyState = 4;
-                        this.status = 200;
-                        this.responseText = '{"success":true,"message":"PlayerIO offline"}';
-                        this.onreadystatechange();
-                    }
-                }, 50);
-                return;
-            }
-            return originalXHRSend.apply(this, arguments);
-        };
-        
-        // 3. Блокиране на WebSocket връзки
-        const originalWebSocket = window.WebSocket;
-        window.WebSocket = function(url) {
-            if (url && url.includes('playerio.com')) {
-                console.warn('🚫 Блокирана PlayerIO WebSocket:', url);
-                throw new Error('PlayerIO WebSocket недостъпен');
-            }
-            return new originalWebSocket(url);
-        };
-        window.WebSocket.prototype = originalWebSocket.prototype;
-        
-        console.log('✅ PlayerIO блокиране активирано');
-
-        // ============================================
-        // ОСНОВЕН КОД ЗА ЗАРЕЖДАНЕ НА ИГРАТА
-        // ============================================
-        let player = null;
-        const gameContainer = document.getElementById('game-container');
-        const loadingDiv = document.getElementById('loading');
-        const statusDiv = document.getElementById('status');
-        const loadBtn = document.getElementById('loadBtn');
-        const reloadBtn = document.getElementById('reloadBtn');
-        const skipBtn = document.getElementById('skipBtn');
-        
-        // Конфигурация на Ruffle за максимум производителност
-        window.RufflePlayer = window.RufflePlayer || {};
-        window.RufflePlayer.config = {
-            autoplay: 'on',
-            unmuteOverlay: 'hidden',
-            preferredRenderer: 'canvas', // По-бързо от WebGL за някои игри
-            letterbox: 'off',
-            warnOnUnsupportedContent: false,
-            contextMenu: 'off',
-            showSwfDownload: false,
-            upgradeToHttps: false,
-            maxExecutionDuration: { secs: 60, nanos: 0 },
-            logLevel: 'error', // Само грешки, без warnings
-            polyfills: false,
-            openUrlMode: 'deny'
-        };
-        
-        function updateStatus(text, isError = false) {
-            statusDiv.textContent = text;
-            statusDiv.style.color = isError ? '#ff5555' : '#cccccc';
-            console.log('Status:', text);
-        }
-        
-        function loadGame() {
-            updateStatus('Зареждане на играта (PlayerIO е блокиран)...');
-            loadBtn.disabled = true;
-            
-            // Изчистване на предишна инстанция
-            if (player) {
-                gameContainer.removeChild(player);
-                player = null;
-            }
-            
-            // Скриване на loading съобщението
-            loadingDiv.style.display = 'none';
-            
-            // Дадем време на блокиращите функции да се активират
-            setTimeout(() => {
-                try {
-                    const ruffle = window.RufflePlayer.newest();
-                    if (!ruffle) {
-                        throw new Error('Ruffle емулаторът не е зареден');
-                    }
-                    
-                    player = ruffle.createPlayer();
-                    player.style.width = '100%';
-                    player.style.height = '100%';
-                    player.style.display = 'block';
-                    
-                    gameContainer.appendChild(player);
-                    
-                    // Зареждане на SWF файла
-                    player.load('swf/game.swf')
-                        .then(() => {
-                            updateStatus('✅ Играта е заредена! PlayerIO заявките са блокирани.');
-                            reloadBtn.disabled = false;
-                            skipBtn.disabled = true;
-                            
-                            // Автоматично пропускане на онлайн частта ако е нужно
-                            setTimeout(() => {
-                                simulateOfflineMode();
-                            }, 2000);
-                        })
-                        .catch(error => {
-                            updateStatus(`❌ Грешка: ${error.message}`, true);
-                            loadBtn.disabled = false;
-                            loadingDiv.style.display = 'block';
-                            loadingDiv.innerHTML = `<h3 style="color:#ff5555">Грешка</h3><p>${error.message}</p>`;
-                        });
-                        
-                } catch (error) {
-                    updateStatus(`❌ Грешка при инициализация: ${error.message}`, true);
-                    loadBtn.disabled = false;
-                    loadingDiv.style.display = 'block';
-                }
-            }, 100);
-        }
-        
-        // Функция за симулиране на офлайн режим
-        function simulateOfflineMode() {
-            console.log('🎮 Активиране на офлайн режим за играта...');
-            updateStatus('🎮 Играта е в офлайн режим. PlayerIO функции са деактивирани.');
-            
-            // Опитваме да "излъжем" играта, че е в офлайн режим
-            try {
-                // Ако играта използва SharedObject за запаметяване на данни
-                if (window.RufflePlayer && window.RufflePlayer.newest) {
-                    const ruffle = window.RufflePlayer.newest();
-                    // Някои игри може да се нуждаят от допълнителни фиксове
-                }
-            } catch (e) {
-                console.log('Неуспешен опит за офлайн симулация:', e);
-            }
-        }
-        
-        // Бутон за пропускане на онлайн частта
-        function skipOnline() {
-            updateStatus('⏭️ Пропускане на онлайн връзката...');
-            
-            // Инжектиране на JavaScript в играта, за да пропусне онлайн екрана
-            try {
-                // Това е общ подход за Flash игри с PlayerIO
-                console.log('Инжектиране на офлайн фикс...');
-                
-                // Ако играта има "Play Offline" бутон, можем да се опитаме да го кликнем
-                setTimeout(() => {
-                    updateStatus('✅ Офлайн режим активиран. Започнете игра!');
-                }, 1000);
-                
-            } catch (error) {
-                console.warn('Неуспешно пропускане:', error);
-            }
-            
-            skipBtn.disabled = true;
-        }
-        
-        // Event Listeners
-        loadBtn.addEventListener('click', loadGame);
-        reloadBtn.addEventListener('click', () => {
-            reloadBtn.disabled = true;
-            loadGame();
-        });
-        skipBtn.addEventListener('click', skipOnline);
-        
-        // Автоматично зареждане след 1 секунда
+        // 1. Изчакай Ruffle да се зареди
         window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (window.RufflePlayer && window.RufflePlayer.newest) {
-                    updateStatus('Ruffle зареден. Стартиране на играта...');
-                    loadGame();
-                } else {
-                    updateStatus('Грешка: Ruffle не се зареди. Опреснете страницата.', true);
-                }
-            }, 1000);
+            const ruffle = window.RufflePlayer.newest();
+            const container = document.getElementById('ruffle-container');
+            
+            // 2. Конфигурация (опционално)
+            ruffle.config = {
+                autoplay: 'on',
+                unmuteOverlay: 'hidden',
+                backgroundColor: '#000000',
+                letterbox: 'fullscreen',
+                splashScreen: false
+            };
+            
+            // 3. Създай player и го добави в контейнера
+            const player = ruffle.createPlayer();
+            container.appendChild(player);
+            
+            // 4. Зареди SWF файла
+            player.load({
+                url: 'game.swf', // Промени името на твоя файл
+                allowScriptAccess: true
+            }).catch(error => {
+                console.error('Грешка при зареждане:', error);
+                alert('Неуспешно зареждане на SWF файла. Провери конзолата за детайли.');
+            });
         });
-        
-        // Допълнителна защита - блокиране на всички мрежови заявки към PlayerIO
-        window.addEventListener('error', function(e) {
-            if (e.message && e.message.includes('playerio')) {
-                console.log('PlayerIO грешка блокирана:', e.message);
-                e.preventDefault();
-                return true;
-            }
-        });
-        
-        console.log('🎮 Системата е готова. PlayerIO API ще бъде блокирано.');
     </script>
 </body>
 </html>
-
