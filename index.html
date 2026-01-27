@@ -3,44 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flash Game - GitHub Pages</title>
+    <title>Flash Game on GitHub Pages</title>
+    
+    <!-- МНОГО ВАЖНО: Ruffle от официалния им сайт -->
+    <script src="https://ruffle.rs/ruffle.js"></script>
+    
     <style>
-        * {
+        /* Минимален CSS */
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
         }
         
-        body {
-            background: #000;
-            color: white;
-            font-family: Arial, sans-serif;
-            min-height: 100vh;
+        #container {
+            width: 100%;
+            height: 100%;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-        }
-        
-        .game-container {
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-        }
-        
-        h1 {
-            color: #4CAF50;
-            margin-bottom: 20px;
+            background: #000;
         }
         
         #game-area {
             width: 596px;
             height: 428px;
-            margin: 20px auto;
             border: 3px solid #4CAF50;
-            background: #000;
             position: relative;
-            overflow: hidden;
+            background: #000;
         }
         
         #game {
@@ -48,218 +43,207 @@
             height: 100%;
         }
         
-        #status {
-            padding: 15px;
-            margin: 15px 0;
-            background: #222;
-            border-radius: 8px;
-            border-left: 5px solid #4CAF50;
+        #controls {
+            margin-top: 20px;
+            text-align: center;
         }
         
         .btn {
-            padding: 12px 25px;
+            padding: 10px 20px;
+            margin: 5px;
             background: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
-            transition: all 0.3s;
+            font-size: 14px;
         }
         
         .btn:hover {
             background: #45a049;
-            transform: scale(1.05);
         }
         
-        .btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .error {
-            background: #332222;
-            color: #ff5555;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 5px solid #ff5555;
-        }
-        
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        #status {
+            color: white;
+            margin: 10px 0;
+            min-height: 20px;
             text-align: center;
         }
         
-        .spinner {
-            border: 5px solid #333;
-            border-top: 5px solid #4CAF50;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+        /* Начален екран */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            z-index: 100;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        #start-screen h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+            color: #FFD700;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>🎮 Flash Game on GitHub Pages</h1>
-        
-        <div id="status">Зареждане на Ruffle...</div>
+    <div id="container">
+        <h1 style="color: #4CAF50; margin-bottom: 10px;">🎮 Flash Game</h1>
         
         <div id="game-area">
-            <div id="loading">
-                <div class="spinner"></div>
-                <p>Зареждане на Flash Player...</p>
+            <!-- Начален екран -->
+            <div id="start-screen">
+                <h2>Flash Game Loader</h2>
+                <p>Размер: 596 × 428 пиксела</p>
+                <p>GitHub Pages Flash Player</p>
+                <div class="blink">▼ КЛИКНИ ТУК ЗА ДА СТАРТИРАШ ▼</div>
+                <p style="margin-top: 30px; font-size: 12px; color: #888;">
+                    Използва се Ruffle Flash емулатор
+                </p>
             </div>
+            
+            <!-- Тук ще се появи играта -->
             <div id="game"></div>
         </div>
         
-        <div>
-            <button class="btn" id="loadBtn" disabled>▶️ Зареди играта</button>
-            <button class="btn" id="fullscreenBtn">📺 Пълен екран</button>
-            <button class="btn" id="reloadBtn">🔄 Опресни</button>
+        <div id="status">Зареждане на Ruffle...</div>
+        
+        <div id="controls">
+            <button class="btn" onclick="startGame()" id="startBtn">▶️ Стартирай играта</button>
+            <button class="btn" onclick="toggleFullscreen()">📺 Пълен екран</button>
+            <button class="btn" onclick="location.reload()">🔄 Опресни</button>
         </div>
     </div>
 
-    <!-- Вариант 1: Стабилна версия на Ruffle -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2024.12.31"></script>
-    
-    <!-- Вариант 2 (ако 1 не работи): По-стара стабилна версия -->
-    <!-- <script src="https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2023.12.31"></script> -->
-    
-    <!-- Вариант 3 (ако и 2 не работи): Директен линк от Ruffle CDN -->
-    <!-- <script src="https://ruffle.rs/ruffle.js"></script> -->
-
     <script>
-        // Конфигурация ПРЕДИ зареждане на скрипта
-        window.RufflePlayer = window.RufflePlayer || {};
-        window.RufflePlayer.config = {
-            publicPath: "",
-            autoplay: "on",
-            unmuteOverlay: "hidden",
-            backgroundColor: "#000000",
-            letterbox: "off",
-            scale: "showAll",
-            warnOnUnsupportedContent: false,
-            logLevel: "error",
-            contextMenu: "off"
-        };
-        
         // Променливи
-        let ruffleInstance = null;
-        let gameLoaded = false;
-        
-        // DOM елементи
-        const statusEl = document.getElementById('status');
-        const loadingEl = document.getElementById('loading');
-        const gameEl = document.getElementById('game');
-        const loadBtn = document.getElementById('loadBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const reloadBtn = document.getElementById('reloadBtn');
+        let rufflePlayer = null;
+        let gameStarted = false;
         
         // Функция за обновяване на статуса
-        function updateStatus(message, isError = false) {
-            statusEl.textContent = message;
-            statusEl.style.color = isError ? '#ff5555' : '#ffffff';
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
             console.log(message);
+        }
+        
+        // Функция за стартиране на играта
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+            
+            // Скриване на началния екран
+            document.getElementById('start-screen').style.display = 'none';
+            updateStatus('Стартиране на играта...');
+            
+            // Изчакване на Ruffle да се зареди
+            const waitForRuffle = setInterval(() => {
+                if (window.RufflePlayer && window.RufflePlayer.newest) {
+                    clearInterval(waitForRuffle);
+                    loadGame();
+                }
+            }, 100);
+            
+            // Ако след 5 секунди Ruffle не се е заредил
+            setTimeout(() => {
+                if (!window.RufflePlayer || !window.RufflePlayer.newest) {
+                    clearInterval(waitForRuffle);
+                    updateStatus('❌ Ruffle не се зареди. Опреснете страницата.');
+                    document.getElementById('start-screen').style.display = 'flex';
+                    document.getElementById('start-screen').innerHTML = `
+                        <div>
+                            <h2 style="color:#ff5555;">❌ Грешка</h2>
+                            <p>Ruffle не се зареди автоматично.</p>
+                            <button class="btn" onclick="location.reload()" style="margin-top:20px;">
+                                🔄 Опресни страницата
+                            </button>
+                            <p style="margin-top:20px; font-size:12px; color:#888;">
+                                Пробвайте да отворите: <br>
+                                <a href="https://ruffle.rs/demo/" style="color:#4CAF50;" target="_blank">
+                                    https://ruffle.rs/demo/
+                                </a>
+                            </p>
+                        </div>
+                    `;
+                }
+            }, 5000);
         }
         
         // Функция за зареждане на играта
         function loadGame() {
-            if (gameLoaded) return;
-            
-            updateStatus('Зареждане на играта...');
-            loadBtn.disabled = true;
-            loadBtn.textContent = '⏳ Зареждане...';
-            
             try {
-                // Проверка дали Ruffle е зареден
-                if (!window.RufflePlayer || !window.RufflePlayer.newest) {
-                    throw new Error('Ruffle не е зареден. Моля, опреснете страницата.');
-                }
+                updateStatus('Създаване на Flash Player...');
                 
-                // Изчистване на предишна инстанция
-                gameEl.innerHTML = '';
-                
-                // Създаване на нова инстанция
+                // Създаване на плеър
                 const ruffle = window.RufflePlayer.newest();
-                ruffleInstance = ruffle.createPlayer();
+                rufflePlayer = ruffle.createPlayer();
                 
                 // Задаване на размери
-                ruffleInstance.style.width = '100%';
-                ruffleInstance.style.height = '100%';
-                ruffleInstance.style.display = 'block';
+                rufflePlayer.style.width = '100%';
+                rufflePlayer.style.height = '100%';
+                rufflePlayer.style.display = 'block';
                 
                 // Добавяне към страницата
-                gameEl.appendChild(ruffleInstance);
-                
-                // Скриване на loading индикатора
-                loadingEl.style.display = 'none';
+                document.getElementById('game').appendChild(rufflePlayer);
                 
                 updateStatus('Зареждане на game.swf...');
                 
                 // Зареждане на SWF файла
-                ruffleInstance.load('game.swf')
+                rufflePlayer.load('game.swf')
                     .then(() => {
                         updateStatus('✅ Играта е заредена успешно!');
-                        gameLoaded = true;
-                        loadBtn.textContent = '🎮 Играта е заредена';
                         
                         // Фокус върху играта
                         setTimeout(() => {
-                            if (ruffleInstance) {
-                                ruffleInstance.focus();
-                            }
+                            rufflePlayer.focus();
+                            // Клик за активиране на аудио
+                            rufflePlayer.click();
                         }, 500);
                     })
                     .catch(error => {
-                        updateStatus(`❌ Грешка: ${error.message}`, true);
-                        loadBtn.disabled = false;
-                        loadBtn.textContent = '🔄 Опитай отново';
-                        loadingEl.style.display = 'block';
+                        updateStatus(`❌ Грешка: ${error.message}`);
                         
-                        // Опитай алтернативен път
-                        tryAlternativeLoad();
+                        // Fallback: покажи директна връзка
+                        document.getElementById('game').innerHTML = `
+                            <div style="color:white; padding:20px; text-align:center;">
+                                <h3>Неуспешно зареждане</h3>
+                                <p>${error.message}</p>
+                                <p>Можете да:</p>
+                                <a href="game.swf" download style="color:#4CAF50; text-decoration:underline;">
+                                    ⬇️ Свалете SWF файла
+                                </a>
+                                <br><br>
+                                <button class="btn" onclick="startGame()">
+                                    🔧 Опитай отново
+                                </button>
+                            </div>
+                        `;
                     });
                     
             } catch (error) {
-                updateStatus(`❌ Грешка: ${error.message}`, true);
-                loadBtn.disabled = false;
-                loadBtn.textContent = '🔄 Опитай отново';
+                updateStatus(`❌ Грешка при инициализация: ${error.message}`);
             }
         }
         
-        // Алтернативно зареждане
-        function tryAlternativeLoad() {
-            updateStatus('Опитвам алтернативен метод...');
-            
-            // Опитай с iframe като fallback
-            const iframe = document.createElement('iframe');
-            iframe.src = 'game.swf';
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            iframe.style.background = '#000';
-            
-            gameEl.innerHTML = '';
-            gameEl.appendChild(iframe);
-            
-            updateStatus('Зареждане чрез iframe...');
-        }
-        
-        // Пълен екран
+        // Функция за пълен екран
         function toggleFullscreen() {
             const gameArea = document.getElementById('game-area');
             
@@ -268,80 +252,36 @@
                     gameArea.requestFullscreen();
                 } else if (gameArea.webkitRequestFullscreen) {
                     gameArea.webkitRequestFullscreen();
-                } else if (gameArea.msRequestFullscreen) {
-                    gameArea.msRequestFullscreen();
                 }
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
                 }
             }
         }
         
-        // Проверка дали Ruffle се е заредил
-        function checkRuffleLoaded() {
-            if (window.RufflePlayer && window.RufflePlayer.newest) {
-                updateStatus('✅ Ruffle е зареден успешно!');
-                loadBtn.disabled = false;
-                return true;
-            }
-            return false;
-        }
-        
-        // Инициализация
+        // Автоматично стартиране при зареждане
         document.addEventListener('DOMContentLoaded', function() {
-            updateStatus('Инициализация на Flash Player...');
+            updateStatus('Очакване на потребителско действие...');
             
-            // Проверяваме периодично дали Ruffle се е заредил
-            const checkInterval = setInterval(() => {
-                if (checkRuffleLoaded()) {
-                    clearInterval(checkInterval);
-                    
-                    // Автоматично зареждане след 1 секунда
-                    setTimeout(loadGame, 1000);
-                }
-            }, 500);
-            
-            // Ако след 10 секунди Ruffle не се е заредил
+            // Автоматично стартиране след 3 секунди ако потребителят вече е кликнал
             setTimeout(() => {
-                if (!checkRuffleLoaded()) {
-                    clearInterval(checkInterval);
-                    updateStatus('❌ Ruffle не се зареди автоматично. Моля, натиснете бутона за опресняване.', true);
-                    
-                    // Покажи алтернативни опции
-                    statusEl.innerHTML += `
-                        <div style="margin-top: 10px; font-size: 14px;">
-                            <p>Пробвайте:</p>
-                            <ol style="text-align: left; display: inline-block;">
-                                <li>Опреснете страницата</li>
-                                <li>Проверете интернет връзката</li>
-                                <li>Използвайте друг браузър</li>
-                            </ol>
-                        </div>
-                    `;
+                if (document.hasFocus()) {
+                    startGame();
                 }
-            }, 10000);
+            }, 3000);
         });
         
-        // Event listeners
-        loadBtn.addEventListener('click', loadGame);
-        fullscreenBtn.addEventListener('click', toggleFullscreen);
-        reloadBtn.addEventListener('click', () => location.reload());
+        // Автоматично стартиране при клик
+        document.getElementById('start-screen').addEventListener('click', startGame);
         
-        // Клик върху играта за активиране на аудио
-        document.addEventListener('click', function() {
-            if (ruffleInstance) {
-                ruffleInstance.focus();
+        // Автоматично стартиране при натискане на клавиш
+        document.addEventListener('keydown', function(e) {
+            if (!gameStarted && (e.code === 'Space' || e.code === 'Enter')) {
+                startGame();
             }
-        });
-        
-        // Грешки
-        window.addEventListener('error', function(e) {
-            console.error('Грешка в страницата:', e);
         });
         
     </script>
