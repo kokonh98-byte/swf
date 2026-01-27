@@ -2,97 +2,363 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Flash Game - Direct Load</title>
+    <title>Flash Game on GitHub Pages</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
             background: #000;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
+            color: white;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        #game {
-            position: absolute;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 596px !important;
-            height: 428px !important;
-            border: 5px solid #00ff00 !important;
-            box-shadow: 0 0 30px #00ff00 !important;
-            animation: glow 2s infinite alternate !important;
+        
+        .container {
+            max-width: 800px;
+            text-align: center;
         }
-        @keyframes glow {
-            from { box-shadow: 0 0 10px #00ff00; }
-            to { box-shadow: 0 0 30px #00ff00; }
+        
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        #game-wrapper {
+            width: 596px;
+            height: 428px;
+            margin: 20px auto;
+            border: 3px solid #4CAF50;
+            position: relative;
+            background: #000;
+        }
+        
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        #status {
+            margin: 15px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #45a049;
+        }
+        
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            color: #ff5555;
+            background: #332222;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 5px solid #ff5555;
+        }
+        
+        .warning {
+            color: #ff9900;
+            background: #332211;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 5px solid #ff9900;
+        }
+        
+        #debug {
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            background: #222;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
+    
+    <!-- GitHub Pages FIX: специална конфигурация -->
     <script>
-        window.RufflePlayer = { config: { 
-            publicPath: "", 
+        window.RufflePlayer = window.RufflePlayer || {};
+        window.RufflePlayer.config = {
+            // GitHub Pages специфични настройки
+            publicPath: "",
+            polyfills: false,
             autoplay: "on",
+            unmuteOverlay: "hidden",
+            backgroundColor: "#000000",
             letterbox: "off",
-            backgroundColor: null
-        }};
+            scale: "showAll",
+            // Дебъг
+            logLevel: "warn",
+            showSwfDownload: false
+        };
+        
+        // GitHub Pages фикс за .wasm файловете
+        window.addEventListener('DOMContentLoaded', function() {
+            // Проверка за .wasm поддръжка
+            if (typeof WebAssembly === 'undefined') {
+                document.getElementById('status').innerHTML = 
+                    '<div class="error">❌ Вашият браузър не поддържа WebAssembly. Моля, използвайте модерен браузър.</div>';
+                return;
+            }
+            
+            console.log('GitHub Pages Flash Player зареждане...');
+        });
     </script>
-    <script src="ruffle.js"></script>
+    
+    <!-- Важно: използваме unpkg.com вместо локални файлове -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2026.01.27"></script>
 </head>
 <body>
-    <div id="game"></div>
+    <div class="container">
+        <h1>🎮 Flash Game on GitHub Pages</h1>
+        
+        <div class="warning">
+            ⚠️ <strong>GitHub Pages специални настройки</strong><br>
+            Използвам онлайн версия на Ruffle поради проблеми с .wasm файловете на GitHub.
+        </div>
+        
+        <div id="game-wrapper">
+            <div id="status">
+                <span id="status-text">Инициализация...</span>
+            </div>
+            <div id="game-canvas"></div>
+        </div>
+        
+        <div>
+            <button class="btn" id="loadBtn">▶️ Зареди играта</button>
+            <button class="btn" id="reloadBtn" disabled>🔄 Рестарт</button>
+            <button class="btn" id="fullscreenBtn">📺 Пълен екран</button>
+        </div>
+        
+        <div id="debug">
+            <strong>Дебъг информация:</strong><br>
+            <span id="debug-text">Очакване...</span>
+        </div>
+        
+        <div style="margin-top: 30px; color: #888; font-size: 14px;">
+            <p>GitHub Pages може да има проблеми със .wasm файловете. Ако играта не се зарежда, пробвайте:</p>
+            <ol style="text-align: left; display: inline-block;">
+                <li>Добавете <code>.nojekyll</code> файл в root папката</li>
+                <li>Използвайте <a href="https://raw.githack.com/" style="color: #4CAF50;">raw.githack.com</a> вместо github.io</li>
+                <li>Проверете конзолата за грешки (F12)</li>
+            </ol>
+        </div>
+    </div>
     
     <script>
-        // УЛТРА-ПРОСТ КОД - работи винаги
-        setTimeout(() => {
-            const player = window.RufflePlayer.newest().createPlayer();
-            
-            // КРИТИЧНО: задаване на инлайн стилове
-            player.setAttribute('style', 
-                'width: 596px !important; ' +
-                'height: 428px !important; ' +
-                'display: block !important; ' +
-                'background-color: #000000 !important; ' +
-                'position: absolute !important; ' +
-                'top: 50% !important; ' +
-                'left: 50% !important; ' +
-                'transform: translate(-50%, -50%) !important;'
-            );
-            
-            document.getElementById('game').appendChild(player);
-            
-            player.load('game.swf').then(() => {
-                console.log('🎮 ИГРАТА Е СТАРТИРАНА И ВИДИМА!');
-                document.title = '▶️ Playing Flash Game';
-                
-                // Събуждане на играта
-                setTimeout(() => {
-                    player.focus();
-                    player.click(); // Кликване върху играта
-                    
-                    // Ако все още е черна, покажи съобщение
-                    setTimeout(() => {
-                        const gameDiv = document.getElementById('game');
-                        gameDiv.style.borderColor = '#ff0000';
-                        gameDiv.innerHTML += `
-                            <div style="position:absolute; top:10px; left:10px; color:white; background:rgba(0,0,0,0.8); padding:10px; border-radius:5px; font-family:Arial; font-size:12px;">
-                                ⚠️ Играта е заредена (596x428)<br>
-                                ▶️ Натисни SPACE или ENTER
-                            </div>
-                        `;
-                    }, 2000);
-                }, 1000);
-            });
-            
-        }, 1000);
+        // ДЕБЪГ
+        function debugLog(msg) {
+            const debugEl = document.getElementById('debug-text');
+            const timestamp = new Date().toLocaleTimeString();
+            debugEl.innerHTML = `[${timestamp}] ${msg}<br>` + debugEl.innerHTML;
+            console.log(msg);
+        }
         
-        // Автоматично кликване при натискане на клавиш
-        document.addEventListener('keydown', (e) => {
-            const player = document.querySelector('ruffle-player');
-            if (player) {
-                player.focus();
-                player.click();
-                console.log('Клавиш натиснат:', e.code);
+        function updateStatus(msg, isError = false) {
+            const statusEl = document.getElementById('status-text');
+            statusEl.textContent = msg;
+            statusEl.style.color = isError ? '#ff5555' : '#ffffff';
+            debugLog(msg);
+        }
+        
+        // ПРОМЕНЛИВИ
+        let rufflePlayer = null;
+        let isLoaded = false;
+        
+        // ФУНКЦИИ
+        function loadGame() {
+            if (isLoaded) return;
+            
+            updateStatus('Проверка на Ruffle...');
+            
+            const loadBtn = document.getElementById('loadBtn');
+            const reloadBtn = document.getElementById('reloadBtn');
+            
+            loadBtn.disabled = true;
+            loadBtn.textContent = '⏳ Зареждане...';
+            
+            // Проверка за Ruffle
+            if (!window.RufflePlayer || !window.RufflePlayer.newest) {
+                updateStatus('❌ Ruffle не е зареден. Опреснете страницата.', true);
+                loadBtn.disabled = false;
+                loadBtn.textContent = '🔄 Опитай отново';
+                return;
             }
+            
+            updateStatus('Ruffle е готов. Създаване на инстанция...');
+            
+            setTimeout(() => {
+                try {
+                    // Изчистване на предишна инстанция
+                    const canvas = document.getElementById('game-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Създаване на нова инстанция
+                    const ruffle = window.RufflePlayer.newest();
+                    rufflePlayer = ruffle.createPlayer();
+                    
+                    // GitHub Pages фикс: задаване на абсолютни размери
+                    rufflePlayer.style.width = '596px';
+                    rufflePlayer.style.height = '428px';
+                    rufflePlayer.style.display = 'block';
+                    rufflePlayer.style.margin = '0 auto';
+                    
+                    // Добавяне към страницата
+                    canvas.appendChild(rufflePlayer);
+                    
+                    updateStatus('Зареждане на game.swf от GitHub...');
+                    
+                    // GitHub Pages специфичен път
+                    const swfUrl = 'game.swf'; // Файлът трябва да е в същата папка
+                    
+                    rufflePlayer.load(swfUrl)
+                        .then(() => {
+                            updateStatus('✅ Играта е заредена успешно!');
+                            isLoaded = true;
+                            reloadBtn.disabled = false;
+                            loadBtn.textContent = '🎮 Играта е заредена';
+                            
+                            // Фокус върху играта
+                            setTimeout(() => {
+                                if (rufflePlayer) {
+                                    rufflePlayer.focus();
+                                    debugLog('Играта е фокусирана');
+                                }
+                            }, 500);
+                            
+                            // GitHub Pages: опитай да активираш аудиото
+                            activateAudio();
+                        })
+                        .catch(error => {
+                            updateStatus(`❌ Грешка: ${error.message}`, true);
+                            loadBtn.disabled = false;
+                            loadBtn.textContent = '🔄 Опитай отново';
+                            
+                            // GitHub Pages алтернативен опит
+                            tryAlternativeLoad();
+                        });
+                        
+                } catch (error) {
+                    updateStatus(`❌ Грешка при инициализация: ${error.message}`, true);
+                    loadBtn.disabled = false;
+                    loadBtn.textContent = '🔄 Опитай отново';
+                }
+            }, 500);
+        }
+        
+        // GitHub Pages алтернативен метод
+        function tryAlternativeLoad() {
+            debugLog('Опитвам алтернативен метод за GitHub Pages...');
+            
+            // Опитай да заредиш от raw.githack
+            const rawUrl = 'https://raw.githack.com/kokonh98-byte/swf/main/game.swf';
+            
+            updateStatus('Опитвам да заредя от raw.githack.com...');
+            
+            if (rufflePlayer) {
+                rufflePlayer.load(rawUrl)
+                    .then(() => {
+                        updateStatus('✅ Заредено от raw.githack.com!');
+                    })
+                    .catch(e => {
+                        debugLog(`Raw.githack също не работи: ${e.message}`);
+                    });
+            }
+        }
+        
+        // Активиране на аудио (задължително за GitHub Pages)
+        function activateAudio() {
+            try {
+                if (window.RufflePlayer && window.RufflePlayer.audioContext) {
+                    if (window.RufflePlayer.audioContext.state === 'suspended') {
+                        window.RufflePlayer.audioContext.resume().then(() => {
+                            debugLog('🔊 Аудио активирано на GitHub Pages');
+                        });
+                    }
+                }
+            } catch (e) {
+                debugLog(`Аудио грешка: ${e.message}`);
+            }
+        }
+        
+        // Пълен екран
+        function toggleFullscreen() {
+            const gameWrapper = document.getElementById('game-wrapper');
+            
+            if (!document.fullscreenElement) {
+                if (gameWrapper.requestFullscreen) {
+                    gameWrapper.requestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        
+        // ИНИЦИАЛИЗАЦИЯ
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('GitHub Pages Flash Player инициализация');
+            updateStatus('Готов за зареждане...');
+            
+            // Автоматично зареждане след 1 секунда
+            setTimeout(() => {
+                loadGame();
+            }, 1000);
+        });
+        
+        // EVENT LISTENERS
+        document.getElementById('loadBtn').addEventListener('click', loadGame);
+        document.getElementById('reloadBtn').addEventListener('click', function() {
+            isLoaded = false;
+            loadGame();
+        });
+        document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+        
+        // GitHub Pages: клик за активиране на аудио
+        document.addEventListener('click', function() {
+            if (isLoaded) {
+                activateAudio();
+            }
+        });
+        
+        // Дебъг на събития
+        window.addEventListener('error', function(e) {
+            debugLog(`Window error: ${e.message}`);
         });
         
     </script>
